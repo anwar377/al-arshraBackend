@@ -1,6 +1,6 @@
 const fs = require("fs");
 const Post = require("../models/Post");
-const cloudinary = require("../utils/Cloudinary");
+const cloudinary = require("../utils/cloudinary");
 const { createNotification } = require("./notificationController");
 
 // --------------------- Helper Functions --------------------- //
