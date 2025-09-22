@@ -30,6 +30,7 @@ const userSchema = new mongoose.Schema(
         },
         followers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
         following: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
+        masjid: { type: mongoose.Schema.Types.ObjectId, ref: "Masjid" },
         isVerified: {
             type: Boolean,
             default: false,
