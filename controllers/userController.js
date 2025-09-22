@@ -1,33 +1,40 @@
-// controllers/userController.js
-
 const User = require("../models/User");
 const cloudinary = require("../utils/cloudinary"); // ✅ Check file name (lowercase)
 
+// =======================
 // GET ALL USERS
+// =======================
 exports.getAllUsers = async (req, res) => {
     try {
-        const users = await User.find();
+        const users = await User.find().populate("masjid"); // 👈 masjid include
         res.status(200).json(users);
     } catch (error) {
-        res.status(500).json({ message: error.message }); // 
+        res.status(500).json({ message: error.message });
     }
 };
 
-
-// ✅ GET MY PROFILE
+// =======================
+// ✅ GET MY PROFILE (with Masjid)
+// =======================
 exports.getMyProfile = async (req, res) => {
     try {
-        const user = await User.findById(req.user.id).select("-password");
+        const user = await User.findById(req.user.id)
+            .select("-password")
+            .populate("masjid"); // 👈 masjid details populate
         res.json(user);
     } catch (err) {
         res.status(500).json({ message: "Failed to get profile", error: err.message });
     }
 };
 
-// ✅ GET USER PROFILE
+// =======================
+// ✅ GET USER PROFILE (with Masjid)
+// =======================
 exports.getUserProfile = async (req, res) => {
     try {
-        const user = await User.findById(req.params.id).select("-password");
+        const user = await User.findById(req.params.id)
+            .select("-password")
+            .populate("masjid"); // 👈 masjid details populate
         if (!user) return res.status(404).json({ message: "User not found" });
         res.json(user);
     } catch (err) {
@@ -35,7 +42,9 @@ exports.getUserProfile = async (req, res) => {
     }
 };
 
+// =======================
 // ✅ UPDATE PROFILE
+// =======================
 exports.updateProfile = async (req, res) => {
     try {
         const { name, bio } = req.body;
@@ -43,15 +52,16 @@ exports.updateProfile = async (req, res) => {
             req.user.id,
             { name, bio },
             { new: true }
-        ).select("-password");
+        ).select("-password").populate("masjid");
         res.json(user);
     } catch (err) {
         res.status(500).json({ message: "Failed to update profile", error: err.message });
     }
 };
 
-
+// =======================
 // ✅ Upload Profile Image (Base64)
+// =======================
 exports.uploadProfileImage = async (req, res) => {
     try {
         const { base64 } = req.body;
@@ -67,7 +77,7 @@ exports.uploadProfileImage = async (req, res) => {
             req.user.id,
             { profileImage: result.secure_url },
             { new: true }
-        );
+        ).populate("masjid");
 
         res.json({ message: "Profile image updated", profileImage: user.profileImage });
     } catch (err) {
@@ -76,7 +86,9 @@ exports.uploadProfileImage = async (req, res) => {
     }
 };
 
+// =======================
 // ✅ Upload Cover Image (Base64)
+// =======================
 exports.uploadCoverImage = async (req, res) => {
     try {
         const { base64 } = req.body;
@@ -90,7 +102,7 @@ exports.uploadCoverImage = async (req, res) => {
             req.user.id,
             { coverImage: result.secure_url },
             { new: true }
-        );
+        ).populate("masjid");
 
         res.json({ message: "Cover image updated", coverImage: user.coverImage });
     } catch (err) {
@@ -99,10 +111,9 @@ exports.uploadCoverImage = async (req, res) => {
     }
 };
 
-
-
+// =======================
 // ✅ FOLLOW / UNFOLLOW USER
-
+// =======================
 exports.followUser = async (req, res) => {
     try {
         const targetId = req.params.id;

@@ -16,36 +16,19 @@ const userSchema = new mongoose.Schema(
             required: [true, "Password is required"],
             minlength: 6,
         },
-        bio: {
-            type: String,
-            default: "",
-        },
-        profileImage: {
-            type: String,
-            default: "",
-        },
-        coverImage: {
-            type: String,
-            default: "",
-        },
+        bio: { type: String, default: "" },
+        profileImage: { type: String, default: "" },
+        coverImage: { type: String, default: "" },
+
         followers: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
         following: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
-        masjid: { type: mongoose.Schema.Types.ObjectId, ref: "Masjid" },
-        isVerified: {
-            type: Boolean,
-            default: false,
-        },
-        role: {
-            type: String,
-            enum: ["user", "admin"],
-            default: "user",
-        },
-        isBanned: {
-            type: Boolean,
-            default: false,
-        },
-        isAdmin: { type: Boolean, default: false },
 
+        masjid: { type: mongoose.Schema.Types.ObjectId, ref: "Masjid" },
+
+        isVerified: { type: Boolean, default: false },
+        role: { type: String, enum: ["user", "admin"], default: "user" },
+        isBanned: { type: Boolean, default: false },
+        isAdmin: { type: Boolean, default: false },
     },
     { timestamps: true }
 );

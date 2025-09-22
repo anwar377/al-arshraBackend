@@ -28,13 +28,17 @@ exports.registerMasjid = async (req, res) => {
             return res.status(400).json({ success: false, message: "All required fields must be provided" });
         }
 
+        // Check if same masjid already exists in same village
         const existingMasjid = await Masjid.findOne({
             masjidName: masjidName.trim(),
             villageName: villageName.trim(),
         });
 
         if (existingMasjid) {
-            return res.status(409).json({ success: false, message: "Masjid with this name in the same village already exists" });
+            return res.status(409).json({
+                success: false,
+                message: "Masjid with this name in the same village already exists",
+            });
         }
 
         const masjid = await Masjid.create({
@@ -50,14 +54,14 @@ exports.registerMasjid = async (req, res) => {
             createdBy: req.user._id,
         });
 
+        // Link masjid to user
         const user = await User.findById(req.user._id);
         if (!user) return res.status(404).json({ success: false, message: "Logged-in user not found" });
 
-        user.masjid = masjid._id; // store single masjid
+        user.masjid = masjid._id;
         await user.save();
 
         res.status(201).json({ success: true, message: "Masjid registered successfully", data: masjid });
-
     } catch (error) {
         console.error("Masjid Registration Error:", error);
         res.status(500).json({ success: false, message: "Registration failed" });
@@ -79,7 +83,10 @@ exports.updateMasjid = async (req, res) => {
             return res.status(403).json({ success: false, message: "Access denied" });
         }
 
-        const updatedMasjid = await Masjid.findByIdAndUpdate(id, req.body, { new: true, runValidators: true });
+        const updatedMasjid = await Masjid.findByIdAndUpdate(id, req.body, {
+            new: true,
+            runValidators: true,
+        });
         res.status(200).json({ success: true, message: "Masjid updated successfully", data: updatedMasjid });
     } catch (error) {
         console.error("Update Masjid Error:", error);
@@ -104,9 +111,10 @@ exports.deleteMasjid = async (req, res) => {
 
         await Masjid.findByIdAndDelete(id);
 
+        // Remove masjid from user if linked
         const user = await User.findById(req.user._id);
         if (user && user.masjid?.toString() === id) {
-            user.masjid = null; // remove reference
+            user.masjid = null;
             await user.save();
         }
 
