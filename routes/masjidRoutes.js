@@ -1,5 +1,4 @@
 const express = require("express");
-const auth = require("../middleware/auth");
 const {
     registerMasjid,
     updateMasjid,
@@ -8,6 +7,7 @@ const {
     getMasjidById,
     getMyMasjid // updated for single masjid
 } = require("../controllers/masjidController");
+const masjidAuth = require("../middleware/masjidAuth");
 
 const router = express.Router();
 
@@ -16,9 +16,9 @@ router.get("/", getAllMasjids);
 router.get("/:id", getMasjidById);
 
 // Private routes
-router.post("/register", auth, registerMasjid);
-router.get("/my", auth, getMyMasjid); // use "/my" instead of "/"
-router.put("/:id", auth, updateMasjid);
-router.delete("/:id", auth, deleteMasjid);
+router.post("/register", masjidAuth, registerMasjid);
+router.get("/my", masjidAuth, getMyMasjid); // use "/my" instead of "/"
+router.put("/:id", masjidAuth, updateMasjid);
+router.delete("/:id", masjidAuth, deleteMasjid);
 
 module.exports = router;
