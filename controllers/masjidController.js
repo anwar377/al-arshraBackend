@@ -10,13 +10,15 @@ exports.registerMasjid = async (req, res) => {
     console.log("Register Masjid Request Body:", req.body);
     try {
         if (!req.user || !req.user._id) {
-            return res.status(401).json({ success: false, message: "User not authenticated" });
+            return res
+                .status(401)
+                .json({ success: false, message: "User not authenticated" });
         }
 
         const {
             masjidName,
             villageName,
-            subDisName,
+            subDistName,
             distName,
             stateName,
             countryName,
@@ -25,27 +27,65 @@ exports.registerMasjid = async (req, res) => {
             madarsa,
         } = req.body;
 
-        if (!masjidName || !villageName || !subDisName || !distName || !stateName || !countryName || !foundationYear) {
-            return res.status(400).json({ success: false, message: "All required fields must be provided" });
+        if (
+            !masjidName ||
+            !villageName ||
+            !subDistName ||
+            !distName ||
+            !stateName ||
+            !countryName ||
+            !foundationYear
+        ) {
+            return res.status(400).json({
+                success: false,
+                message: "All required fields must be provided",
+            });
         }
 
-        // Check if same masjid already exists in same village
+        // ✅ Rule 1: User cannot register more than one masjid
+        const user = await User.findById(req.user._id);
+        if (!user) {
+            return res
+                .status(404)
+                .json({ success: false, message: "Logged-in user not found" });
+        }
+
+        if (user.masjid) {
+            const existingUserMasjid = await Masjid.findById(user.masjid);
+            if (existingUserMasjid) {
+                return res.status(400).json({
+                    success: false,
+                    message: "You have already registered a masjid",
+                });
+            } else {
+                // 🧹 Cleanup stale reference if masjid was deleted
+                user.masjid = null;
+                await user.save();
+            }
+        }
+
+        // ✅ Rule 2: Masjid must be unique by (name + full address)
         const existingMasjid = await Masjid.findOne({
-            masjidName: masjidName.trim(),
-            villageName: villageName.trim(),
+            masjidName: { $regex: new RegExp(`^${masjidName.trim()}$`, "i") },
+            villageName: { $regex: new RegExp(`^${villageName.trim()}$`, "i") },
+            subDistName: { $regex: new RegExp(`^${subDistName.trim()}$`, "i") },
+            distName: { $regex: new RegExp(`^${distName.trim()}$`, "i") },
+            stateName: { $regex: new RegExp(`^${stateName.trim()}$`, "i") },
+            countryName: { $regex: new RegExp(`^${countryName.trim()}$`, "i") },
         });
 
         if (existingMasjid) {
             return res.status(409).json({
                 success: false,
-                message: "Masjid with this name in the same village already exists",
+                message: "A masjid with this name already exists at this address",
             });
         }
 
+        // ✅ Create new masjid
         const masjid = await Masjid.create({
             masjidName: masjidName.trim(),
             villageName: villageName.trim(),
-            subDisName: subDisName.trim(),
+            subDistName: subDistName.trim(),
             distName: distName.trim(),
             stateName: stateName.trim(),
             countryName: countryName.trim(),
@@ -55,19 +95,27 @@ exports.registerMasjid = async (req, res) => {
             createdBy: req.user._id,
         });
 
-        // Link masjid to user
-        const user = await User.findById(req.user._id);
-        if (!user) return res.status(404).json({ success: false, message: "Logged-in user not found" });
-
+        // ✅ Link masjid to user
         user.masjid = masjid._id;
         await user.save();
 
-        res.status(201).json({ success: true, message: "Masjid registered successfully", data: masjid });
+        res.status(201).json({
+            success: true,
+            message: "Masjid registered successfully",
+            data: masjid,
+        });
     } catch (error) {
         console.error("Masjid Registration Error:", error);
-        res.status(500).json({ success: false, message: "Registration failed" });
+        res.status(500).json({
+            success: false,
+            message: "Registration failed",
+            error: error.message,
+        });
     }
 };
+
+
+
 
 /**
  * @desc    Update masjid (only creator)
