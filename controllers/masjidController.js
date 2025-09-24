@@ -212,14 +212,22 @@ exports.getMasjidById = async (req, res) => {
  * @route   GET /api/masjids/my
  * @access  Private
  */
+// ✅ Get current user's masjid
 exports.getMyMasjid = async (req, res) => {
     try {
+        if (!req.user || !req.user._id) {
+            return res.status(401).json({ success: false, message: "User not authenticated" });
+        }
+
         const user = await User.findById(req.user._id).populate("masjid");
-        if (!user.masjid) return res.status(404).json({ success: false, message: "No masjid assigned" });
+        if (!user || !user.masjid) {
+            return res.status(404).json({ success: false, message: "No masjid assigned" });
+        }
 
         res.status(200).json({ success: true, data: user.masjid });
     } catch (error) {
-        console.error("Get User Masjid Error:", error);
+        console.error("Get My Masjid Error:", error);
         res.status(500).json({ success: false, message: "Failed to fetch user's masjid" });
     }
 };
+
