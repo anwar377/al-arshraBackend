@@ -1,3 +1,4 @@
+
 const mongoose = require("mongoose");
 
 const masjidSchema = new mongoose.Schema(
@@ -13,6 +14,16 @@ const masjidSchema = new mongoose.Schema(
         madarsa: { type: Boolean },
 
         createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+
+        // 🔑 Approval system fields
+        status: {
+            type: String,
+            enum: ["pending", "approved", "rejected"],
+            default: "pending",
+        },
+        adminNote: { type: String, default: "" },
+        approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+        approvedAt: { type: Date },
     },
     { timestamps: true }
 );

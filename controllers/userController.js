@@ -45,19 +45,43 @@ exports.getUserProfile = async (req, res) => {
 // =======================
 // ✅ UPDATE PROFILE
 // =======================
+
+// ✅ Update Profile
 exports.updateProfile = async (req, res) => {
     try {
-        const { name, bio } = req.body;
+        const { name, bio, profileImage, coverImage, masjid } = req.body;
+
+        // 🔹 Only update allowed fields
+        const updatedFields = {};
+        if (name !== undefined) updatedFields.name = name;
+        if (bio !== undefined) updatedFields.bio = bio;
+        if (profileImage !== undefined) updatedFields.profileImage = profileImage;
+        if (coverImage !== undefined) updatedFields.coverImage = coverImage;
+        if (masjid !== undefined) updatedFields.masjid = masjid;
+
         const user = await User.findByIdAndUpdate(
             req.user.id,
-            { name, bio },
+            { $set: updatedFields },
             { new: true }
-        ).select("-password").populate("masjid");
-        res.json(user);
+        )
+            .select("-password")
+            .populate("masjid");
+
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        res.json({
+            message: "Profile updated successfully",
+            user,
+        });
     } catch (err) {
+        console.error("Update profile error:", err);
         res.status(500).json({ message: "Failed to update profile", error: err.message });
     }
 };
+
+
 
 // =======================
 // ✅ Upload Profile Image (Base64)
