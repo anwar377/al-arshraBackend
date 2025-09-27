@@ -70,6 +70,7 @@ app.use('/api/posts', require('./routes/postRoutes'));
 app.use('/api/comments', require('./routes/commentRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api/masjids', require('./routes/masjidRoutes'));
+app.use('/api/admin', require('./routes/adminRoutes'));
 
 
 
