@@ -1,4 +1,3 @@
-// middleware/adminAuth.js
 module.exports = (req, res, next) => {
     try {
         if (!req.user) {
@@ -8,7 +7,8 @@ module.exports = (req, res, next) => {
             });
         }
 
-        if (req.user.role !== "admin") {
+        // ✅ Works with both conditions (role OR isAdmin)
+        if (req.user.role !== "admin" && !req.user.isAdmin) {
             return res.status(403).json({
                 success: false,
                 message: "Access denied. Admins only.",
