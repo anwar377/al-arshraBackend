@@ -21,12 +21,14 @@ exports.register = async (req, res) => {
             });
         }
 
+        const hashPassword = await bcrypt.hash(password, 10);
+
         // 🔹 Create user (password will be hashed by pre-save hook)
         const user = await User.create({
             name,
             email,
             mobile,
-            password,
+            password: hashPassword,
             role: role || "user",
         });
 

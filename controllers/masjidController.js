@@ -136,16 +136,34 @@ exports.getAllMasjids = async (req, res) => {
     }
 };
 
-/**
- * @desc    Get single approved masjid by ID
- * @route   GET /api/masjids/:id
- * @access  Public
- */
+
+exports.getMyMasjid = async (req, res) => {
+    try {
+        console.log("Get My Masjid called by user:", req.user._id);
+        const user = await User.findById(req.user._id).populate("masjid");
+        if (!user || !user.masjid) {
+            return res.status(404).json({ success: false, message: "No masjid assigned" });
+        }
+
+        res.status(200).json({ success: true, data: user.masjid });
+    } catch (error) {
+        console.error("Get My Masjid Error:", error);
+        res.status(500).json({ success: false, message: "Failed to fetch user's masjid" });
+    }
+};
+
 exports.getMasjidById = async (req, res) => {
     try {
         const { id } = req.params;
-        const masjid = await Masjid.findOne({ _id: id, status: "approved" });
-        if (!masjid) return res.status(404).json({ success: false, message: "Masjid not found" });
+
+        if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+            return res.status(400).json({ success: false, message: "Invalid Masjid ID" });
+        }
+
+        const masjid = await Masjid.findById(id);
+        if (!masjid) {
+            return res.status(404).json({ success: false, message: "Masjid not found" });
+        }
 
         res.status(200).json({ success: true, data: masjid });
     } catch (error) {
@@ -154,24 +172,6 @@ exports.getMasjidById = async (req, res) => {
     }
 };
 
-/**
- * @desc    Get logged-in user's masjid (any status)
- * @route   GET /api/masjids/my
- * @access  Private
- */
-exports.getMyMasjid = async (req, res) => {
-    try {
-        if (!req.user || !req.user._id) return res.status(401).json({ success: false, message: "User not authenticated" });
-
-        const user = await User.findById(req.user._id).populate("masjid");
-        if (!user || !user.masjid) return res.status(404).json({ success: false, message: "No masjid assigned" });
-
-        res.status(200).json({ success: true, data: user.masjid });
-    } catch (error) {
-        console.error("Get My Masjid Error:", error);
-        res.status(500).json({ success: false, message: "Failed to fetch user's masjid" });
-    }
-};
 
 /**
  * @desc    Admin - Get all pending masjids
@@ -213,27 +213,31 @@ exports.approveMasjid = async (req, res) => {
 };
 
 /**
- * @desc    Admin - Reject a masjid
+ * @desc    Admin - Reject a masjid (delete registration)
  * @route   PUT /api/masjids/:id/reject
  * @access  Private/Admin
  */
 exports.rejectMasjid = async (req, res) => {
     try {
         const { id } = req.params;
-        const { reason } = req.body;
 
         const masjid = await Masjid.findById(id);
         if (!masjid) return res.status(404).json({ success: false, message: "Masjid not found" });
 
-        masjid.status = "rejected";
-        masjid.approvedBy = req.user._id;
-        masjid.approvedAt = new Date();
-        masjid.adminNote = reason || "";
-        await masjid.save();
+        // Unlink masjid from user
+        const user = await User.findById(masjid.createdBy);
+        if (user && user.masjid?.toString() === id) {
+            user.masjid = null;
+            await user.save();
+        }
 
-        res.status(200).json({ success: true, message: "Masjid rejected", data: masjid });
+        // Delete masjid permanently
+        await Masjid.findByIdAndDelete(id);
+
+        res.status(200).json({ success: true, message: "Masjid registration rejected and deleted" });
     } catch (error) {
         console.error("Reject Masjid Error:", error);
         res.status(500).json({ success: false, message: "Rejection failed" });
     }
 };
+
