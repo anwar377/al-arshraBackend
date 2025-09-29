@@ -5,20 +5,51 @@ const Otp = require("../models/otp");
 const { generateOtp } = require("../utils/generateOtp");
 const sendEmail = require("../utils/sendEmail");
 
+
+// ✅ Register Controller
 exports.register = async (req, res) => {
-    const { name, email, password, role, } = req.body;
     try {
-        const exist = await User.findOne({ email });
-        if (exist) return res.status(400).json({ message: "Email already exists" });
+        const { name, email, mobile, password, role } = req.body;
 
-        const hashed = await bcrypt.hash(password, 10);
-        const user = await User.create({ name, email, password: hashed, role });
+        // 🔹 Check if email or mobile already exists
+        const existingUser = await User.findOne({ $or: [{ email }, { mobile }] });
+        if (existingUser) {
+            return res.status(400).json({
+                message: existingUser.email === email
+                    ? "Email already exists"
+                    : "Mobile number already exists",
+            });
+        }
 
-        res.status(201).json({ message: "User registered successfully", userId: user._id });
+        // 🔹 Create user (password will be hashed by pre-save hook)
+        const user = await User.create({
+            name,
+            email,
+            mobile,
+            password,
+            role: role || "user",
+        });
+
+        res.status(201).json({
+            message: "User registered successfully",
+            user: {
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                mobile: user.mobile,
+                role: user.role,
+            },
+        });
     } catch (err) {
+        console.error("Register error:", err);
+        // Handle duplicate key errors
+        if (err.code === 11000) {
+            return res.status(400).json({ message: "Duplicate field value detected" });
+        }
         res.status(500).json({ message: "Register error", error: err.message });
     }
 };
+
 
 exports.login = async (req, res) => {
     const { email, password } = req.body;

@@ -49,12 +49,13 @@ exports.getUserProfile = async (req, res) => {
 // ✅ Update Profile
 exports.updateProfile = async (req, res) => {
     try {
-        const { name, bio, profileImage, coverImage, masjid } = req.body;
+        const { name, bio, mobile, profileImage, coverImage, masjid } = req.body;
 
         // 🔹 Only update allowed fields
         const updatedFields = {};
         if (name !== undefined) updatedFields.name = name;
         if (bio !== undefined) updatedFields.bio = bio;
+        if (mobile !== undefined) updatedFields.mobile = mobile;
         if (profileImage !== undefined) updatedFields.profileImage = profileImage;
         if (coverImage !== undefined) updatedFields.coverImage = coverImage;
         if (masjid !== undefined) updatedFields.masjid = masjid;

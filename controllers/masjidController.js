@@ -212,28 +212,46 @@ exports.approveMasjid = async (req, res) => {
     }
 };
 
+
 /**
- * @desc    Admin - Reject a masjid
+ * @desc    Admin - Reject a masjid (delete registration)
+ * @route   PUT /api/masjids/:id/reject
+ * @access  Private/Admin
+ */
+/**
+ * @desc    Admin - Reject a masjid (delete registration)
  * @route   PUT /api/masjids/:id/reject
  * @access  Private/Admin
  */
 exports.rejectMasjid = async (req, res) => {
     try {
         const { id } = req.params;
-        const { reason } = req.body;
 
         const masjid = await Masjid.findById(id);
-        if (!masjid) return res.status(404).json({ success: false, message: "Masjid not found" });
+        if (!masjid) {
+            return res.status(404).json({ success: false, message: "Masjid not found" });
+        }
 
-        masjid.status = "rejected";
-        masjid.approvedBy = req.user._id;
-        masjid.approvedAt = new Date();
-        masjid.adminNote = reason || "";
-        await masjid.save();
+        // Unlink masjid from user
+        const user = await User.findById(masjid.createdBy);
+        if (user && user.masjid?.toString() === id) {
+            user.masjid = null;
+            await user.save();
+        }
 
-        res.status(200).json({ success: true, message: "Masjid rejected", data: masjid });
+        // Delete masjid permanently
+        await Masjid.findByIdAndDelete(id);
+
+        // Explicit rejected response
+        res.status(200).json({
+            success: true,
+            message: "Masjid registration rejected and deleted",
+            data: { _id: id, status: "rejected" },
+        });
     } catch (error) {
         console.error("Reject Masjid Error:", error);
         res.status(500).json({ success: false, message: "Rejection failed" });
     }
 };
+
+
